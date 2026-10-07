@@ -68,7 +68,7 @@ All branch names must strictly follow structured prefixes and kebab-case naming 
 
 | Branch Type | Syntax | Valid Examples | Description / Scope |
 | :--- | :--- | :--- | :--- |
-| **Feature** | `feature/<ticket>-<description>` | `feature/ML-104-dvc-pipeline-caching`<br>`feature/ML-120-add-xgboost-trainer`<br>`feature/ML-135-batch-inference-api` | New capabilities, pipeline components, data transformations, evaluation metrics. |
+| **Feature** | `feature/<ticket>-<description>` | `feature/ML-104-dvc-pipeline-caching`<br>`feature/ML-120-add-xgboost-trainer`<br>`feature/ML-135-batch-inference-api`<br>`feature/data-pipeline`<br>`feature/model-training` | New capabilities, pipeline components, data transformations, evaluation metrics. |
 | **Experiment** | `experiment/<id>-<description>` | `experiment/EXP-12-vit-vs-resnet`<br>`experiment/EXP-34-focal-loss-tuning`<br>`experiment/ML-99-optuna-hpo` | Research, novel architectures, hyperparameter searches, feature selection studies. |
 | **Bugfix** | `bugfix/<ticket>-<description>` | `bugfix/ML-112-fix-nan-gradient-clipping`<br>`bugfix/ML-140-null-feature-imputation` | Non-critical fixes for staging/develop pipelines and data ingestion. |
 | **Hotfix** | `hotfix/<ticket>-<version-patch>` | `hotfix/PROD-01-fix-inference-timeout`<br>`hotfix/v1.2.1-cuda-oom-batch-size` | High-priority production issues branching directly off `main`. |
@@ -94,27 +94,23 @@ gitGraph
     checkout develop
     commit id: "init-develop"
     
-    branch feature/ML-104-data-prep
-    checkout feature/ML-104-data-prep
-    commit id: "add clean step"
-    commit id: "add dvc pipeline"
+    branch feature/data-pipeline
+    checkout feature/data-pipeline
+    commit id: "data pipeline module"
     checkout develop
-    merge feature/ML-104-data-prep id: "PR #104 Squash & Merge"
+    merge feature/data-pipeline id: "Merge data-pipeline"
     
-    branch experiment/EXP-12-bert-tuning
-    checkout experiment/EXP-12-bert-tuning
-    commit id: "hpo script"
-    commit id: "log metrics"
+    branch feature/model-training
+    checkout feature/model-training
+    commit id: "training loop module"
     checkout develop
-    merge experiment/EXP-12-bert-tuning id: "PR #115 Squash & Merge"
-    
-    branch release/v1.1.0
-    checkout release/v1.1.0
-    commit id: "bump version v1.1.0"
-    checkout main
-    merge release/v1.1.0 id: "Merge Release v1.1.0" tag: "v1.1.0"
+    merge feature/model-training id: "Merge model-training"
+
+    branch feature/model-evaluation
+    checkout feature/model-evaluation
+    commit id: "eval metrics module"
     checkout develop
-    merge release/v1.1.0 id: "Sync develop"
+    merge feature/model-evaluation id: "Merge model-evaluation"
 ```
 
 ### 4.2 Step-by-Step Lifecycle of a Feature Branch
@@ -127,15 +123,13 @@ gitGraph
 
 2. **Create Branch with Proper Convention**:
    ```bash
-   git checkout -b feature/ML-104-dvc-pipeline-caching
+   git checkout -b feature/data-pipeline
    ```
 
 3. **Atomic Commits & Versioning**:
-   * Commit code and configuration files.
-   * Version data and model artifacts using DVC / tracking pointers (never commit raw data or heavy checkpoints directly to Git).
    ```bash
-   git add src/pipeline/stage_cache.py configs/pipeline.yaml dvc.yaml dvc.lock
-   git commit -m "feat(pipeline): implement caching mechanism for stage outputs [ML-104]"
+   git add practice/week-04-practice-merging-with-branching-strategy/src/data_pipeline.py
+   git commit -m "feat(pipeline): implement data ingestion, validation, and preprocessing pipeline"
    ```
 
 4. **Rebase Onto Develop Before Submitting**:
@@ -145,13 +139,12 @@ gitGraph
    git rebase origin/develop
    ```
 
-5. **Push and Open Pull Request**:
+5. **Push and Open Pull Request / Merge with `--no-ff`**:
    ```bash
-   git push -u origin feature/ML-104-dvc-pipeline-caching
+   git push origin feature/data-pipeline
+   git checkout develop
+   git merge --no-ff feature/data-pipeline -m "Merge branch 'feature/data-pipeline' into develop - data ingestion & preprocessing"
    ```
-
-6. **Automatic Deletion**:
-   Once merged into `develop`, the remote and local feature branches are deleted.
 
 ---
 
@@ -183,58 +176,6 @@ Before any PR can be merged into `develop` or `main`, the CI pipeline must pass 
 * **Minimum Approvals**:
   * Merges into `develop`: Minimum **1 approval** from an ML Engineer or Data Scientist peer.
   * Merges into `main`: Minimum **2 approvals**, including the Lead ML Engineer / Repository Maintainer.
-* **Review Checklist**:
-  * [ ] Are random seeds explicitly set and logged for reproducibility?
-  * [ ] Are data pointers (DVC hash, S3 URIs) tracked instead of raw files?
-  * [ ] Are metrics and hyperparameters tracked in MLflow/W&B?
-  * [ ] Are pipeline configs updated in `configs/`?
-  * [ ] Have integration and unit tests been added or updated?
-
-### 5.3 Merge Strategies
-
-| Target Branch | Source Branch | Merge Method | Rationale |
-| :--- | :--- | :--- | :--- |
-| `develop` | `feature/*` or `experiment/*` | **Squash and Merge** | Creates a single atomic commit with the ticket number, maintaining a clean, linear history on `develop`. |
-| `develop` | `bugfix/*` | **Squash and Merge** | Consolidates bug investigation commits into a clear fix commit. |
-| `main` | `release/*` | **Merge Commit (`--no-ff`)** | Preserves release history, release commit boundaries, and tags. |
-| `main` | `hotfix/*` | **Merge Commit (`--no-ff`)** | Clearly documents emergency production patches. |
-
-### 5.4 Branch Protection Rules
-
-The following protections are configured in the Git repository settings:
-
-* **For `main`**:
-  * Require a pull request before merging.
-  * Require at least 2 approving reviews.
-  * Require status checks to pass before merging (Linting, Tests, Pipeline dry-run).
-  * Require branches to be up to date before merging.
-  * Do not allow force pushes (`push --force` disabled).
-  * Do not allow deletions of `main`.
-
-* **For `develop`**:
-  * Require a pull request before merging.
-  * Require at least 1 approving review.
-  * Require all CI status checks to pass.
-  * Do not allow force pushes.
-
----
-
-## 6. Reproducibility & ML-Specific Guidelines
-
-### 6.1 Decoupling Code, Data, and Model Weights
-1. **Never Commit Raw Data or Model Checkpoints**:
-   * Large binaries (`.csv`, `.parquet`, `.pt`, `.onnx`, `.pkl`) are excluded via `.gitignore`.
-2. **Version Data with Trackers**:
-   * Track datasets with DVC (`.dvc` files) or store deterministic dataset versions in S3/GCS referenced in Git-tracked configs.
-3. **Log Experiment Runs**:
-   * For every training commit on `experiment/*` or `develop`, log the Git commit hash (`git rev-parse HEAD`), hyperparameter config, and output metrics to the centralized experiment tracker (MLflow / Weights & Biases).
-
-### 6.2 Experiment to Production Flow
-1. An experiment begins on `experiment/EXP-XX-...`.
-2. Once validation metrics exceed the benchmark on the held-out validation set, the code is refactored into modular components.
-3. A PR is opened to merge into `develop` using the standardized PR template.
-4. When a release cycle is triggered, a `release/vX.Y.Z` branch validates the model on the full test suite.
-5. Merging to `main` tags the release, registers the trained model artifact to the Production Model Registry, and triggers the deployment pipeline.
 
 ---
 
@@ -257,14 +198,12 @@ All feature work branches off `develop` and integrates back into `develop` once 
 2. **Create Standard Feature Branch**:
    ```bash
    git checkout -b feature/data-pipeline
-   # or with Jira ticket convention:
-   git checkout -b feature/ML-101-data-pipeline
    ```
 
 3. **Develop and Commit Incrementally**:
    Make clear, atomic commits following conventional commit syntax:
    ```bash
-   git add src/data_pipeline.py
+   git add practice/week-04-practice-merging-with-branching-strategy/src/data_pipeline.py
    git commit -m "feat(pipeline): implement data ingestion, validation, and preprocessing pipeline"
    ```
 
@@ -388,11 +327,10 @@ Expected topology sample:
 
 | Operation | Command / Pattern |
 | :--- | :--- |
-| Start new feature | `git checkout develop && git pull && git checkout -b feature/ML-<ticket>-<name>` |
+| Start new feature | `git checkout develop && git pull && git checkout -b feature/<name>` |
 | Start ML experiment | `git checkout develop && git pull && git checkout -b experiment/EXP-<id>-<name>` |
-| Commit with Conventional Commit | `git commit -m "feat(model): add focal loss implementation [ML-104]"` |
+| Commit with Conventional Commit | `git commit -m "feat(pipeline): implement data ingestion [ML-101]"` |
 | Sync with develop before PR | `git fetch origin && git rebase origin/develop` |
-| Merge feature into develop | `git merge --no-ff feature/<name> -m "Merge branch ... into develop"` |
+| Merge feature into develop | `git merge --no-ff feature/<name> -m "Merge branch 'feature/<name>' into develop - <description>"` |
 | Merge method to `develop` | **Squash and Merge** or **Merge Commit (`--no-ff`)** via PR |
 | Merge method to `main` | **Merge Commit** via Release PR |
-
