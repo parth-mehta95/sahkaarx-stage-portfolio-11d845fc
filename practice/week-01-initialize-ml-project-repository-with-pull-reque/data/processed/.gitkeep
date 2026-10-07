@@ -1,0 +1,2 @@
+# Processed data directory
+Cleaned, transformed, and split data files (e.g., Parquet, Feather) saved here.

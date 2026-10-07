@@ -1,0 +1,2 @@
+# Raw data directory
+Place immutable raw source data here. Raw data should never be modified.
