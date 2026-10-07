@@ -1,0 +1,83 @@
+# ML Project Configuration Matrix (Synthesized Conflict Resolution)
+# Reconciled from feature/model-v2-regularization and feature/model-v2-efficiency
+
+project:
+  name: "ml-project-scaffold"
+  version: "0.2.0"
+  description: "Unified ML Architecture supporting Regularized & Edge Inference Profiles"
+  author: "ML Engineering Team (Merged Squads)"
+
+data:
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  synthetic_samples: 1000
+  feature_count: 10
+  test_size: 0.2
+  val_size: 0.1
+  random_state: 42
+  target_column: "target"
+
+# Reconciled Model Architecture: Multi-profile Support
+model:
+  name: "RandomForestClassifier"
+  type: "tabular_classifier"
+  active_profile: "production_regularized" # Options: "production_regularized", "edge_low_latency"
+  
+  # Default baseline hyperparameters
+  hyperparameters:
+    n_estimators: 100
+    max_depth: 8
+    min_samples_split: 4
+    min_samples_leaf: 2
+    random_state: 42
+    n_jobs: -1
+
+  # Harmonized profiles resolving branch conflicts:
+  profiles:
+    production_regularized:
+      description: "High capacity regularized model with balanced class weights"
+      n_estimators: 150
+      max_depth: 12
+      min_samples_split: 6
+      min_samples_leaf: 3
+      criterion: "entropy"
+      class_weight: "balanced"
+      random_state: 42
+      n_jobs: -1
+      target_accuracy: 0.90
+      target_f1: 0.88
+
+    edge_low_latency:
+      description: "Lightweight shallow trees optimized for sub-15ms inference"
+      n_estimators: 60
+      max_depth: 6
+      min_samples_split: 2
+      min_samples_leaf: 1
+      max_features: "sqrt"
+      criterion: "gini"
+      random_state: 42
+      n_jobs: -1
+      target_accuracy: 0.82
+      target_f1: 0.80
+      target_latency_ms: 15.0
+
+  artifacts_dir: "models/checkpoints"
+  model_filename: "model.joblib"
+  metrics_filename: "metrics.json"
+
+training:
+  epochs: 12
+  batch_size: 32
+  early_stopping_patience: 3
+  metrics_to_track:
+    - "accuracy"
+    - "precision"
+    - "recall"
+    - "f1_score"
+    - "roc_auc"
+
+evaluation:
+  target_accuracy: 0.85
+  target_f1: 0.80
+  target_latency_ms: 25.0
+  confusion_matrix_filename: "confusion_matrix.json"

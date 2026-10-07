@@ -1,0 +1,85 @@
+# ML Project Configuration Matrix (Simulated Git Content Conflict)
+
+<<<<<<< HEAD (main with feature/model-v2-regularization)
+project:
+  name: "ml-project-scaffold"
+  version: "0.2.0-regularized"
+  description: "ML Project with Deep Tree Regularization & High Capacity"
+  author: "ML Engineering Team - Modeling Squad"
+=======
+project:
+  name: "ml-project-scaffold"
+  version: "0.2.0-efficiency"
+  description: "ML Project with Lightweight Trees for Sub-15ms Edge Inference"
+  author: "ML Engineering Team - Edge Inference Squad"
+>>>>>>> feature/model-v2-efficiency
+
+data:
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  synthetic_samples: 1000
+  feature_count: 10
+  test_size: 0.2
+  val_size: 0.1
+  random_state: 42
+  target_column: "target"
+
+model:
+  name: "RandomForestClassifier"
+  type: "tabular_classifier"
+<<<<<<< HEAD (main with feature/model-v2-regularization)
+  hyperparameters:
+    n_estimators: 150
+    max_depth: 12
+    min_samples_split: 6
+    min_samples_leaf: 3
+    criterion: "entropy"
+    class_weight: "balanced"
+    random_state: 42
+    n_jobs: -1
+  artifacts_dir: "models/checkpoints"
+  model_filename: "model_regularized.joblib"
+  metrics_filename: "metrics_regularized.json"
+=======
+  hyperparameters:
+    n_estimators: 60
+    max_depth: 6
+    min_samples_split: 2
+    min_samples_leaf: 1
+    max_features: "sqrt"
+    criterion: "gini"
+    random_state: 42
+    n_jobs: -1
+  artifacts_dir: "models/checkpoints"
+  model_filename: "model_efficient.joblib"
+  metrics_filename: "metrics_efficient.json"
+>>>>>>> feature/model-v2-efficiency
+
+training:
+<<<<<<< HEAD (main with feature/model-v2-regularization)
+  epochs: 15
+  batch_size: 32
+  early_stopping_patience: 4
+=======
+  epochs: 8
+  batch_size: 64
+  early_stopping_patience: 2
+>>>>>>> feature/model-v2-efficiency
+  metrics_to_track:
+    - "accuracy"
+    - "precision"
+    - "recall"
+    - "f1_score"
+    - "roc_auc"
+
+evaluation:
+<<<<<<< HEAD (main with feature/model-v2-regularization)
+  target_accuracy: 0.90
+  target_f1: 0.88
+  confusion_matrix_filename: "confusion_matrix.json"
+=======
+  target_accuracy: 0.82
+  target_f1: 0.80
+  target_latency_ms: 15.0
+  confusion_matrix_filename: "confusion_matrix.json"
+>>>>>>> feature/model-v2-efficiency
